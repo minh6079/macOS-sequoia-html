@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Sequoia Simulation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .desktop {
+            background: url('https://th.bing.com/th/id/OIP.EuluzXSP79UOgT56f-8pBwHaEK?rs=1&pid=ImgDetMain') no-repeat center center;
+            background-size: cover;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menubar {
+            background-color: rgba(255, 255, 255, 0); 
+            color: black;
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 20px;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            align-items: center;
+            box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px); 
+        }
+
+        .menubar img {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+        }
+
+        .dock {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .dock-item {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            padding: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .dock-item:hover {
+            transform: scale(1.2);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .dock img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .window {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: absolute;
+            width: 80%;
+            height: 70%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .window-header {
+            background-color: rgba(0, 0, 0, 1);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            color: white;
+            cursor: move;
+            gap: 10px;
+            position: relative;
+        }
+
+        .window-header .window-controls {
+            position: absolute;
+            left: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .window-content {
+            padding: 0;
+            overflow: auto;
+            flex-grow: 1;
+        }
+
+        .window-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .close-btn, .minimize-btn, .maximize-btn {
+            cursor: pointer;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+
+        .close-btn {
+            background: #ff3b30;
+        }
+
+        .minimize-btn {
+            background: #ffcc00;
+        }
+
+        .maximize-btn {
+            background: #28cd41;
+        }
+
+        .settings-container {
+            padding: 20px;
+        }
+
+        .setting {
+            margin-bottom: 20px;
+        }
+
+        .setting label {
+            font-weight: bold;
+        }
+
+        .setting input {
+            margin-left: 10px;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            function updateTime() {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+                document.getElementById('clock').textContent = timeString;
+            }
+
+            setInterval(updateTime, 1000);
+            updateTime();
+
+            function dragElement(element) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                const header = element.querySelector(".window-header");
+                if (header) {
+                    header.onmousedown = dragMouseDown;
+                } else {
+                    element.onmousedown = dragMouseDown;
+                }
+
+                function dragMouseDown(e) {
+                    e.preventDefault();
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    document.onmouseup = closeDragElement;
+                    document.onmousemove = elementDrag;
+                }
+
+                function elementDrag(e) {
+                    e.preventDefault();
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    element.style.top = (element.offsetTop - pos2) + "px";
+                    element.style.left = (element.offsetLeft - pos1) + "px";
+                }
+
+                function closeDragElement() {
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+            }
+
+            window.openWindow = function(id) {
+                const element = document.getElementById(id);
+                element.style.display = 'flex';
+                dragElement(element);
+            };
+
+            window.closeWindow = function(id) {
+                document.getElementById(id).style.display = 'none';
+            };
+
+            window.minimizeWindow = function(id) {
+                const element = document.getElementById(id);
+                element.style.display = 'none';
+            };
+
+            window.maximizeWindow = function(id) {
+                const element = document.getElementById(id);
+                element.style.width = '100%';
+                element.style.height = '100%';
+                element.style.top = '0';
+                element.style.left = '0';
+            };
+        });
+    </script>
+</head>
+<body>
+    <div class="desktop">
+        <div class="menubar">
+            <div class="left-menu">
+                <img src="images/Apple_logo_black.png" alt="Apple Logo"> | File | Edit | View | Go | Window | Help
+            </div>
+            <div class="right-menu">
+                <span id="clock"></span> | WiFi | Battery
+            </div>
+        </div>
+        <div class="dock">
+            <div class="dock-item" onclick="openWindow('finder-window')">
+                <img src="images/Finder_logo_2020.png" alt="Finder">
+            </div>
+            <div class="dock-item" onclick="openWindow('safari-window')">
+                <img src="images/Apple_Safari_logo_2020.png" alt="Safari">
+            </div>
+            <div class="dock-item" onclick="openWindow('mail-window')">
+                <img src="images/mail_icon_2013.png" alt="Mail">
+            </div>
+            <div class="dock-item" onclick="openWindow('music-window')">
+                <img src="images/Apple_Music_logo.png" alt="Music">
+            </div>
+            <div class="dock-item" onclick="openWindow('settings-window')">
+                <img src="images/System_preferences_icon_2022.png" alt="Settings">
+            </div>
+        </div>
+
+        <!-- Safari Window -->
+        <div class="window" id="safari-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <span class="close-btn" onclick="closeWindow('safari-window')">X</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('safari-window')">_</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('safari-window')">[]</span>
+                </div>
+                <span>Safari</span>
+            </div>
+            <div class="window-content">
+                <iframe src="https://www.google.com" title="Safari"></iframe>
+            </div>
+        </div>
+
+        <!-- Mail Window -->
+        <div class="window" id="mail-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <span class="close-btn" onclick="closeWindow('mail-window')">X</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('mail-window')">_</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('mail-window')">[]</span>
+                </div>
+                <span>Mail</span>
+            </div>
+            <div class="window-content">
+                <iframe src="https://mail.google.com" title="Mail"></iframe>
+            </div>
+        </div>
+
+        <!-- Settings Window -->
+        <div class="window" id="settings-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <span class="close-btn" onclick="closeWindow('settings-window')">X</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('settings-window')">_</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('settings-window')">[]</span>
+                </div>
+                <span>System Preferences</span>
+            </div>
+            <div class="window-content">
+                <div class="settings-container">
+                    <div class="setting">
+                        <label for="darkMode">Enable Dark Mode</label>
+                        <input type="checkbox" id="darkMode">
+                    </div>
+                    <div class="setting">
+                        <label for="notifications">Enable Notifications</label>
+                        <input type="checkbox" id="notifications">
+                    </div>
+                    <div class="setting">
+                        <button>Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
