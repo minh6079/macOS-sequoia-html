@@ -16,7 +16,7 @@
 
         .desktop {
             background: url('images/macos-background-1.png') no-repeat center center;
-            background-size: cover; /* Make sure it covers the whole screen */
+            background-size: cover;
             height: 100%;
             width: 100%;
             position: relative;
@@ -26,7 +26,7 @@
         }
 
         .menubar {
-            background-color: rgba(255, 255, 255, 0); 
+            background-color: rgba(255, 255, 255, 0);
             color: black;
             display: flex;
             justify-content: space-between;
@@ -36,7 +36,7 @@
             width: 100%;
             align-items: center;
             box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px); 
+            backdrop-filter: blur(10px);
         }
 
         .menubar img {
@@ -85,6 +85,7 @@
             height: 70%;
             display: none;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .window-header {
@@ -101,7 +102,7 @@
             position: relative;
         }
 
-        .window-header .window-controls {
+        .window-controls {
             position: absolute;
             left: 10px;
             display: flex;
@@ -143,6 +144,16 @@
 
         .maximize-btn {
             background: #28cd41;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            cursor: se-resize;
         }
 
         .settings-container {
@@ -189,6 +200,7 @@
                     pos4 = e.clientY;
                     document.onmouseup = closeDragElement;
                     document.onmousemove = elementDrag;
+                    element.style.zIndex = 1000;
                 }
 
                 function elementDrag(e) {
@@ -207,10 +219,45 @@
                 }
             }
 
+            function resizeElement(element) {
+                let pos1 = 0, pos2 = 0;
+                const resizeHandle = element.querySelector(".resize-handle");
+
+                if (resizeHandle) {
+                    resizeHandle.onmousedown = initResize;
+                }
+
+                function initResize(e) {
+                    e.preventDefault();
+                    pos1 = e.clientX;
+                    pos2 = e.clientY;
+                    document.onmouseup = stopResize;
+                    document.onmousemove = elementResize;
+                }
+
+                function elementResize(e) {
+                    e.preventDefault();
+                    const width = element.offsetWidth - (pos1 - e.clientX);
+                    const height = element.offsetHeight - (pos2 - e.clientY);
+                    if (width > 200 && height > 150) {
+                        element.style.width = width + "px";
+                        element.style.height = height + "px";
+                    }
+                    pos1 = e.clientX;
+                    pos2 = e.clientY;
+                }
+
+                function stopResize() {
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+            }
+
             window.openWindow = function(id) {
                 const element = document.getElementById(id);
                 element.style.display = 'flex';
                 dragElement(element);
+                resizeElement(element);
             };
 
             window.closeWindow = function(id) {
@@ -265,14 +312,15 @@
             <div class="window-header">
                 <div class="window-controls">
                     <span class="close-btn" onclick="closeWindow('safari-window')">X</span>
-                    <span class="minimize-btn" onclick="minimizeWindow('safari-window')">_</span>
-                    <span class="maximize-btn" onclick="maximizeWindow('safari-window')">[]</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('safari-window')">-</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('safari-window')">➚</span>
                 </div>
                 <span>Safari</span>
             </div>
             <div class="window-content">
                 <iframe src="https://www.google.com" title="Safari"></iframe>
             </div>
+            <div class="resize-handle"></div>
         </div>
 
         <!-- Mail Window -->
@@ -280,14 +328,31 @@
             <div class="window-header">
                 <div class="window-controls">
                     <span class="close-btn" onclick="closeWindow('mail-window')">X</span>
-                    <span class="minimize-btn" onclick="minimizeWindow('mail-window')">_</span>
-                    <span class="maximize-btn" onclick="maximizeWindow('mail-window')">[]</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('mail-window')">-</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('mail-window')">➚</span>
                 </div>
                 <span>Mail</span>
             </div>
             <div class="window-content">
-                <iframe src="https://mail.google.com" title="Mail"></iframe>
+                <iframe src="https://gmail.com" title="Mail"></iframe>
             </div>
+            <div class="resize-handle"></div>
+        </div>
+
+        <!-- Finder Window -->
+        <div class="window" id="finder-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <span class="close-btn" onclick="closeWindow('finder-window')">X</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('finder-window')">-</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('finder-window')">➚</span>
+                </div>
+                <span>Finder</span>
+            </div>
+            <div class="window-content">
+            <iframe src="https://finder-clone.netlify.app/"</iframe>
+            </div>
+            <div class="resize-handle"></div>
         </div>
 
         <!-- Settings Window -->
@@ -295,26 +360,22 @@
             <div class="window-header">
                 <div class="window-controls">
                     <span class="close-btn" onclick="closeWindow('settings-window')">X</span>
-                    <span class="minimize-btn" onclick="minimizeWindow('settings-window')">_</span>
-                    <span class="maximize-btn" onclick="maximizeWindow('settings-window')">[]</span>
+                    <span class="minimize-btn" onclick="minimizeWindow('settings-window')">-</span>
+                    <span class="maximize-btn" onclick="maximizeWindow('settings-window')">➚</span>
                 </div>
-                <span>System Preferences</span>
+                <span>Settings</span>
             </div>
-            <div class="window-content">
-                <div class="settings-container">
-                    <div class="setting">
-                        <label for="darkMode">Enable Dark Mode</label>
-                        <input type="checkbox" id="darkMode">
-                    </div>
-                    <div class="setting">
-                        <label for="notifications">Enable Notifications</label>
-                        <input type="checkbox" id="notifications">
-                    </div>
-                    <div class="setting">
-                        <button>Save Changes</button>
-                    </div>
+            <div class="window-content settings-container">
+                <div class="setting">
+                    <label for="dark-mode">Enable Dark Mode</label>
+                    <input type="checkbox" id="dark-mode">
+                </div>
+                <div class="setting">
+                    <label for="notifications">Enable Notifications</label>
+                    <input type="checkbox" id="notifications">
                 </div>
             </div>
+            <div class="resize-handle"></div>
         </div>
     </div>
 </body>
